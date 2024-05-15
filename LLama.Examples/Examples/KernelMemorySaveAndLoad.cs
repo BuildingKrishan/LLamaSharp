@@ -1,11 +1,13 @@
-﻿using LLamaSharp.KernelMemory;
+using LLamaSharp.KernelMemory;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.Configuration;
 using Microsoft.KernelMemory.ContentStorage.DevTools;
 using Microsoft.KernelMemory.FileSystem.DevTools;
 using Microsoft.KernelMemory.MemoryStorage.DevTools;
 using System.Diagnostics;
-
+using LLama.Common;
+using Microsoft.Identity.Client;
+using System.Threading;
 namespace LLama.Examples.Examples;
 
 public class KernelMemorySaveAndLoad
@@ -13,7 +15,8 @@ public class KernelMemorySaveAndLoad
     static string StorageFolder => Path.GetFullPath($"./storage-{nameof(KernelMemorySaveAndLoad)}");
     static bool StorageExists => Directory.Exists(StorageFolder) && Directory.GetDirectories(StorageFolder).Length > 0;
 
-    public static async Task Run()
+    LlamaSharpTextGenerator _generator = null;
+    public async Task Run()
     {
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine(
@@ -54,11 +57,11 @@ public class KernelMemorySaveAndLoad
             await IngestDocuments(memory);
         }
 
-        await AskSingleQuestion(memory, "What formats does KM support?");
+        await AskSingleQuestion(memory, "What are the required documents?");
         await StartUserChatSession(memory);
     }
 
-    private static IKernelMemory CreateMemoryWithLocalStorage(string modelPath)
+    private IKernelMemory CreateMemoryWithLocalStorage(string modelPath)
     {
         Common.InferenceParams infParams = new() { AntiPrompts = ["\n\n"] };
 
@@ -66,15 +69,15 @@ public class KernelMemorySaveAndLoad
 
         SearchClientConfig searchClientConfig = new()
         {
-            MaxMatchesCount = 1,
+            MaxMatchesCount = 2,
             AnswerTokens = 100,
         };
 
         TextPartitioningOptions parseOptions = new()
         {
-            MaxTokensPerParagraph = 300,
-            MaxTokensPerLine = 100,
-            OverlappingTokens = 30
+            MaxTokensPerParagraph = 200,
+            MaxTokensPerLine = 70,
+            OverlappingTokens = 25
         };
 
         SimpleFileStorageConfig storageConfig = new()
@@ -89,6 +92,22 @@ public class KernelMemorySaveAndLoad
             StorageType = FileSystemTypes.Disk,
         };
 
+        // Create the executor object here
+        var parameters = new ModelParams(lsConfig.ModelPath)
+        {
+            ContextSize = lsConfig.ContextSize ?? 2048,
+            Seed = lsConfig.Seed ?? 0,
+            GpuLayerCount = lsConfig.GpuLayerCount ?? 20,
+            Embeddings = true,
+            MainGpu = lsConfig?.MainGpu ?? 0,
+            SplitMode = lsConfig?.SplitMode ?? LLama.Native.GPUSplitMode.None,
+        };
+        var weights = LLamaWeights.LoadFromFile(parameters);
+        var context = weights.CreateContext(parameters);
+        var executor = new StatelessExecutor(weights, parameters);
+        _generator = new LlamaSharpTextGenerator(weights, context, executor, lsConfig.DefaultInferenceParams);
+        var embedder = new LLamaEmbedder(weights, parameters);
+
         Console.ForegroundColor = ConsoleColor.Blue;
         Console.WriteLine($"Kernel memory folder: {StorageFolder}");
 
@@ -96,20 +115,20 @@ public class KernelMemorySaveAndLoad
         return new KernelMemoryBuilder()
             .WithSimpleFileStorage(storageConfig)
             .WithSimpleVectorDb(vectorDbConfig)
-            .WithLLamaSharpDefaults(lsConfig)
+            .WithLLamaSharpCustom(lsConfig, _generator, embedder) // Pass LlamaSharpTextGenerator and LLamaEmbedder instances
             .WithSearchClientConfig(searchClientConfig)
             .With(parseOptions)
             .Build();
     }
 
-    private static async Task AskSingleQuestion(IKernelMemory memory, string question)
+    private async Task AskSingleQuestion(IKernelMemory memory, string question)
     {
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine($"Question: {question}");
         await ShowAnswer(memory, question);
     }
 
-    private static async Task StartUserChatSession(IKernelMemory memory)
+    private async Task StartUserChatSession(IKernelMemory memory)
     {
         while (true)
         {
@@ -123,11 +142,11 @@ public class KernelMemorySaveAndLoad
         }
     }
 
-    private static async Task IngestDocuments(IKernelMemory memory)
+    private async Task IngestDocuments(IKernelMemory memory)
     {
         string[] filesToIngest = [
-                Path.GetFullPath(@"./Assets/sample-SK-Readme.pdf"),
-                Path.GetFullPath(@"./Assets/sample-KM-Readme.pdf"),
+                Path.GetFullPath(@"./Assets/Admissions IIM A.pdf"),
+               // Path.GetFullPath(@"./Assets/sample-KM-Readme.pdf"),
             ];
 
         for (int i = 0; i < filesToIngest.Length; i++)
@@ -141,21 +160,31 @@ public class KernelMemorySaveAndLoad
         }
     }
 
-    private static async Task ShowAnswer(IKernelMemory memory, string question)
+    private async Task ShowAnswer(IKernelMemory memory, string question)
     {
         Stopwatch sw = Stopwatch.StartNew();
         Console.ForegroundColor = ConsoleColor.DarkGray;
         Console.WriteLine($"Generating answer...");
-
         MemoryAnswer answer = await memory.AskAsync(question);
-        Console.WriteLine($"Answer generated in {sw.Elapsed}");
 
+        // given the facts below
+        var generatingText = _generator.GenerateLiveTextAsync(answer.Result);
+        
+        // Display the generating text async
+        await foreach (var text in generatingText)
+        {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            // print the text not in new line
+            Console.Write(text);
+        }
         Console.ForegroundColor = ConsoleColor.Gray;
         Console.WriteLine($"Answer: {answer.Result}");
         foreach (var source in answer.RelevantSources)
         {
             Console.WriteLine($"Source: {source.SourceName}");
         }
+        Console.WriteLine($"Answer generated in {sw.Elapsed}");
+
         Console.WriteLine();
     }
 }

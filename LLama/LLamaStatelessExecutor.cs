@@ -9,6 +9,7 @@ using LLama.Exceptions;
 using LLama.Native;
 using LLama.Sampling;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace LLama
 {
@@ -64,9 +65,9 @@ namespace LLama
         public async IAsyncEnumerable<string> InferAsync(string prompt, IInferenceParams? inferenceParams = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             // Ensure the context from last time is disposed (it always should be)
-            if (!Context.NativeHandle.IsClosed)
-                Context.Dispose();
-
+           // if (!Context.NativeHandle.IsClosed)
+           Context.Dispose();
+              
             // Create an inference context which will be disposed when this method exits
             using var context = _weights.CreateContext(_params, _logger);
             Context = context;
@@ -95,7 +96,8 @@ namespace LLama
 
             // Evaluate the prompt, in chunks smaller than the max batch size
             var n_past = 0;
-            var (r, _) = Context.NativeHandle.Decode(tokens, LLamaSeqId.Zero, _batch, ref n_past);
+            var decodeResult = await Task.Run(() => Context.NativeHandle.Decode(tokens, LLamaSeqId.Zero, _batch, ref n_past));
+            var (r, _) = decodeResult;
             if (r != DecodeResult.Ok)
                 throw new LLamaDecodeError(r);
 

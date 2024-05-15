@@ -1,4 +1,4 @@
-﻿using Spectre.Console;
+using Spectre.Console;
 using LLama.Examples.Examples;
 
 public class ExampleRunner
@@ -23,7 +23,7 @@ public class ExampleRunner
         { "LLama Model: Quantize", () => Task.Run(QuantizeModel.Run) },
         { "Grammar: Constrain response to json format", GrammarJsonResponse.Run },
         { "Kernel Memory: Document Q&A", KernelMemory.Run },
-        { "Kernel Memory: Save and Load", KernelMemorySaveAndLoad.Run },
+        { "Kernel Memory: Save and Load", new KernelMemorySaveAndLoad().Run },
         { "Semantic Kernel: Prompt", SemanticKernelPrompt.Run },
         { "Semantic Kernel: Chat", SemanticKernelChat.Run },
         { "Semantic Kernel: Store", SemanticKernelMemory.Run },

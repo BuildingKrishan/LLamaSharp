@@ -1,4 +1,4 @@
-﻿using LLama;
+using LLama;
 using LLama.Common;
 using LLama.Native;
 using Microsoft.KernelMemory.AI;
@@ -16,7 +16,8 @@ namespace LLamaSharp.KernelMemory
         private readonly InferenceParams? _defaultInferenceParams;
         private bool _ownsContext = false;
         private bool _ownsWeights = false;
-
+        public TextGenerationOptions _options; // Class-level field for options
+        public CancellationToken _cancellationToken; // Class-level field
         public int MaxTokenTotal { get; }
 
         /// <summary>
@@ -71,10 +72,19 @@ namespace LLamaSharp.KernelMemory
         }
 
         /// <inheritdoc/>
-        public IAsyncEnumerable<string> GenerateTextAsync(string prompt, TextGenerationOptions options, CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<string> GenerateTextAsync(string prompt, TextGenerationOptions options, CancellationToken cancellationToken = default)
         {
-            return _executor.InferAsync(prompt, OptionsToParams(options, this._defaultInferenceParams), cancellationToken: cancellationToken);
+            _options = options; // Store options in class-level field
+            _cancellationToken = cancellationToken; // Store cancellationToken in class-level field
+            yield return prompt;
+            //return _executor.InferAsync(prompt, OptionsToParams(options, this._defaultInferenceParams), cancellationToken: cancellationToken);
         }
+
+        public IAsyncEnumerable<string> GenerateLiveTextAsync(string prompt)//, TextGenerationOptions options, CancellationToken cancellationToken = default)
+        {
+            return _executor.InferAsync(prompt, OptionsToParams(_options, this._defaultInferenceParams), _cancellationToken);
+        }
+
 
         private static InferenceParams OptionsToParams(TextGenerationOptions options, InferenceParams? defaultParams)
         {

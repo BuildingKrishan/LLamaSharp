@@ -1,4 +1,4 @@
-﻿using Microsoft.KernelMemory;
+using Microsoft.KernelMemory;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -68,6 +68,14 @@ namespace LLamaSharp.KernelMemory
             builder.AddSingleton<ITextGenerator>(textGenerator);
             return builder;
         }
+
+        public static IKernelMemoryBuilder WithLLamaSharpCustom(this IKernelMemoryBuilder builder, LLamaSharpConfig config, LlamaSharpTextGenerator textGenerator, LLamaEmbedder embedder)
+        {
+            builder.WithLLamaSharpTextEmbeddingGeneration(new LLamaSharpTextEmbeddingGenerator(embedder));
+            builder.WithLLamaSharpTextGeneration(textGenerator);
+            return builder;
+        }
+
 
         /// <summary>
         /// Adds LLamaSharpTextEmbeddingGeneration and LLamaSharpTextGeneration to the KernelMemoryBuilder.
