@@ -80,9 +80,9 @@ namespace LLamaSharp.KernelMemory
             //return _executor.InferAsync(prompt, OptionsToParams(options, this._defaultInferenceParams), cancellationToken: cancellationToken);
         }
 
-        public IAsyncEnumerable<string> GenerateLiveTextAsync(string prompt)//, TextGenerationOptions options, CancellationToken cancellationToken = default)
+        public IAsyncEnumerable<string> GenerateLiveTextAsync(string prompt, CancellationToken cancellationToken)//, TextGenerationOptions options, CancellationToken cancellationToken = default)
         {
-            return _executor.InferAsync(prompt, OptionsToParams(_options, this._defaultInferenceParams), _cancellationToken);
+            return _executor.InferAsync(prompt, OptionsToParams(_options, this._defaultInferenceParams), cancellationToken);
         }
 
 
