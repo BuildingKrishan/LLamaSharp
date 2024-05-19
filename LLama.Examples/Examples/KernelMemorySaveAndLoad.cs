@@ -167,8 +167,10 @@ public class KernelMemorySaveAndLoad
         Console.WriteLine($"Generating answer...");
         MemoryAnswer answer = await memory.AskAsync(question);
 
+        CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+        CancellationToken cancellationToken = cancellationTokenSource.Token;
         // given the facts below
-        var generatingText = _generator.GenerateLiveTextAsync(answer.Result);
+        var generatingText = _generator.GenerateLiveTextAsync(answer.Result, cancellationToken);
         
         // Display the generating text async
         await foreach (var text in generatingText)

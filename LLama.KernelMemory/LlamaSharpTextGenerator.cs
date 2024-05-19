@@ -71,13 +71,13 @@ namespace LLamaSharp.KernelMemory
             }
         }
 
-        /// <inheritdoc/>
+        // We have to remove the InferAsync code from here in order to obtain live Enumerable output as the output eventually returned earlier passes through KernelMemory code (unmodifiable) and returns a completed string.
+        // So we have separated and instead the prompt is directly returned. After that GenerateLiveTextAsync with input prompt is invoked to obtain IAsyncEnumerable response
         public async IAsyncEnumerable<string> GenerateTextAsync(string prompt, TextGenerationOptions options, CancellationToken cancellationToken = default)
         {
             _options = options; // Store options in class-level field
             _cancellationToken = cancellationToken; // Store cancellationToken in class-level field
             yield return prompt;
-            //return _executor.InferAsync(prompt, OptionsToParams(options, this._defaultInferenceParams), cancellationToken: cancellationToken);
         }
 
         public IAsyncEnumerable<string> GenerateLiveTextAsync(string prompt, CancellationToken cancellationToken)//, TextGenerationOptions options, CancellationToken cancellationToken = default)
