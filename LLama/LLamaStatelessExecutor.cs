@@ -66,8 +66,8 @@ namespace LLama
         public async IAsyncEnumerable<string> InferAsync(string prompt, IInferenceParams? inferenceParams = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             // Ensure the context from last time is disposed (it always should be)
-           // if (!Context.NativeHandle.IsClosed)
-           Context.Dispose();
+           if (!Context.NativeHandle.IsClosed)
+                Context.Dispose();
               
             // Create an inference context which will be disposed when this method exits
             using var context = _weights.CreateContext(_params, _logger);

@@ -2,23 +2,15 @@
     "messages": [
         {
             "author_role": "System",
-            "content": "Transcript of a dialog, where the User interacts with an Assistant named Bob. Bob is helpful, kind, honest, good at writing, and never fails to answer the User's requests immediately and with precision."
+            "content": "Transcript of a dialog, where the User interacts with an Assistant. Assistant is helpful, kind, honest, good at writing, and never fails to answer the User's requests immediately and with precision, the assistant only reponds with relevant content"
         },
         {
             "author_role": "User",
-            "content": "Hello, Bob."
+            "content": "Hello."
         },
         {
             "author_role": "Assistant",
             "content": "Hello. How may I help you today?"
-        },
-        {
-            "author_role": "User",
-            "content": "Please tell me the largest city in Europe."
-        },
-        {
-            "author_role": "Assistant",
-            "content": "Sure. The largest city in Europe is Istanbul, Turkey."
         }
     ]
 }
